@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
   <title>Attendance Form</title>
   <style>
-    /* Styles are identical to the previous version – just a compact version */
+    /* Same styles as before – include them here */
+    /* I'll keep it concise – you can copy the full CSS from the previous snippet */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -34,11 +35,7 @@
       border-left: 5px solid #f1c40f;
       padding-left: 14px;
     }
-    .form-group {
-      margin-bottom: 18px;
-      display: flex;
-      flex-direction: column;
-    }
+    .form-group { margin-bottom: 18px; display: flex; flex-direction: column; }
     label { font-weight: 600; font-size: 1rem; color: #2c3e50; margin-bottom: 6px; }
     label .required { color: #e74c3c; margin-left: 2px; }
     select, input {
@@ -55,15 +52,8 @@
       outline: none;
       font-family: inherit;
     }
-    select:focus, input:focus {
-      border-color: #f1c40f;
-      box-shadow: 0 0 0 4px rgba(241, 196, 15, 0.2);
-    }
-    select:disabled, input:read-only {
-      background: #f1f2f6;
-      cursor: not-allowed;
-      opacity: 0.8;
-    }
+    select:focus, input:focus { border-color: #f1c40f; box-shadow: 0 0 0 4px rgba(241, 196, 15, 0.2); }
+    select:disabled, input:read-only { background: #f1f2f6; cursor: not-allowed; opacity: 0.8; }
     .new-member-group { display: none; margin-top: 4px; padding-top: 16px; border-top: 2px dashed #dfe6e9; }
     .new-member-group.visible { display: block; }
     #genderDisplay { display: block; }
@@ -198,9 +188,9 @@
 
 <script>
   // ====== Configuration ======
-  const API_URL = 'https://script.google.com/macros/s/AKfycbw95R3TbxLRqz-DX4oXzylzO4vorh1VctNT-jikyZFM2lKb5pDbZW3bw8P8cqRu7P3kWQ/exec'; // Your deployment URL
+  const API_URL = 'https://script.google.com/macros/s/AKfycbw95R3TbxLRqz-DX4oXzylzO4vorh1VctNT-jikyZFM2lKb5pDbZW3w8P8cqRu7P3kWQ/exec';
 
-  // ====== Helper functions ======
+  // ====== UI helpers (same as before) ======
   function showLoading() {
     document.getElementById('loading-overlay').classList.add('show');
     document.getElementById('team').disabled = true;
@@ -233,8 +223,6 @@
     });
     hideMessage();
   }
-
-  // ----- New member toggle -----
   function toggleNewMember(show) {
     const group = document.getElementById('newMemberGroup');
     const phone = document.getElementById('phone');
@@ -242,7 +230,6 @@
     const genderSelect = document.getElementById('genderSelect');
     const nationalId = document.getElementById('nationalId');
     const newNameInput = document.getElementById('newMemberName');
-
     clearErrors();
     if (show) {
       group.classList.add('visible');
@@ -274,11 +261,8 @@
       newNameInput.value = '';
     }
   }
-
-  // ----- Validation -----
   function validatePhone(phone) { return /^(010|011|012|015)\d{8}$/.test(phone); }
   function validateNationalId(id) { return /^\d{14}$/.test(id); }
-
   function validateNewMemberFields() {
     const phone = document.getElementById('phone').value.trim();
     const gender = document.getElementById('genderSelect').value;
@@ -286,7 +270,6 @@
     const newName = document.getElementById('newMemberName').value.trim();
     let isValid = true;
     clearErrors();
-
     if (!newName) {
       document.getElementById('newMemberName').classList.add('input-error');
       showMessage('Please enter the new member\'s name.', false);
@@ -310,79 +293,144 @@
     return isValid;
   }
 
-  // ====== API calls using fetch ======
-
-  async function callApi(action, payload = {}) {
+  // ====== API call ======
+  async function callAPI(action, payload = {}) {
     showLoading();
     try {
       const response = await fetch(API_URL, {
         method: 'POST',
-        mode: 'no-cors', // Important: Apps Script doesn't support CORS, but we can still send
+        mode: 'cors',                // Now we can read the response
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, ...payload })
       });
-      // Because of 'no-cors', we cannot read the response body.
-      // We'll assume success if no error is thrown.
-      // For better handling, remove 'no-cors' and handle response, but Apps Script returns opaque.
-      // Alternative: use 'cors' with proper headers on Apps Script side (set Access-Control-Allow-Origin).
-      // Since we cannot modify headers easily, we'll use a workaround: we can use fetch with 'cors' and parse response.
-      // But Apps Script doesn't allow custom CORS headers. So we use 'no-cors' and treat as fire-and-forget.
-      // To get feedback, we can implement a redirect or use a callback URL.
-      // However, a simpler approach: we can still get the response if we deploy the web app with "Anyone" and use 'cors'.
-      // Let's try with 'cors' and parse JSON.
-      // Re‑do fetch without 'no-cors' to get response.
-    } catch (err) {
+      const result = await response.json();
       hideLoading();
-      showMessage('Network error: ' + err.message, false);
-      return false;
+      if (result.success) {
+        return result.data || result.message;
+      } else {
+        showMessage('Error: ' + result.error, false);
+        return null;
+      }
+    } catch (error) {
+      hideLoading();
+      showMessage('Network error: ' + error.message, false);
+      return null;
     }
-    // If we use 'cors', we can get response.
-    // Let's try with 'cors' and handle.
-    // Actually, we need to set the Apps Script to return proper CORS headers.
-    // In Apps Script, we can set ContentService with headers? Not directly.
-    // Workaround: use JSONP or use a proxy.
-    // Since the user wants a simple solution, we'll use 'no-cors' and rely on the script working,
-    // but we won't get success/failure feedback. That's acceptable if the script always works.
-    // Better: we can still use 'no-cors' and show a success message blindly.
-    // We'll show success after the request is sent.
-    hideLoading();
-    showMessage('✅ Attendance recorded!', true);
-    return true;
   }
 
-  // We'll rewrite submitForm to use fetch with 'no-cors' but also handle potential errors.
-  // However, we can also change the Apps Script to return a simple text response and use 'cors'.
-  // Let's update the Apps Script to return a response with a specific status.
-  // Since we cannot change CORS headers, we'll use 'no-cors' and assume success.
-  // For a robust solution, we can embed the HTML in Apps Script and serve it, but the user wants GitHub.
-  // I'll provide a version that uses 'no-cors' and shows a message after sending.
-  // Also, we'll load teams and members via fetch as well.
-
-  // ----- Load teams -----
+  // ====== Load teams ======
   async function loadTeams() {
-    showLoading();
-    try {
-      // We need to get teams via a GET request. We'll use a GET with parameters.
-      // But with 'no-cors', we can't read the response. So we need to change approach.
-      // The Apps Script web app can handle GET and return JSON if we set it up.
-      // We'll modify doGet to handle actions: ?action=getTeams
-      // But we already have doGet serving HTML. We can change it to check for parameters.
-      // Or we can create a separate endpoint.
-      // For simplicity, we'll keep the HTML served from Apps Script for the data loading part,
-      // but the user wants to host on GitHub. So we need to make the Apps Script serve JSON.
-      // Let's redesign: we'll have two entry points: doGet for the web app (if needed) and doPost for API.
-      // We'll use doPost for all actions, sending action in the body.
-      // We'll modify doPost to handle 'getTeams', 'getMembers', 'getDetails', 'saveResponse'.
-      // Then our front-end will call doPost with action.
-      // We'll write the new Code.gs accordingly.
-    } catch (err) {
-      hideLoading();
-      showMessage('Error loading teams: ' + err.message, false);
+    const teams = await callAPI('getTeams');
+    if (teams) {
+      const teamSelect = document.getElementById('team');
+      teams.forEach(team => {
+        const opt = document.createElement('option');
+        opt.value = team;
+        opt.text = team;
+        teamSelect.appendChild(opt);
+      });
     }
   }
 
-  // We'll rewrite the JavaScript to use fetch for all actions with a unified API.
-  // Let's provide the complete updated HTML with proper fetch usage.
+  // ====== Team change ======
+  async function onTeamChange() {
+    const teamSelect = document.getElementById('team');
+    const memberSelect = document.getElementById('member');
+    const team = teamSelect.value;
+    memberSelect.innerHTML = '<option value="">-- Select Member --</option>';
+    document.getElementById('phone').value = '';
+    document.getElementById('genderDisplay').value = '';
+    document.getElementById('genderSelect').value = '';
+    document.getElementById('nationalId').value = '';
+    hideMessage();
+    toggleNewMember(false);
+    if (!team) return;
+
+    const members = await callAPI('getMembers', { team });
+    if (members) {
+      members.forEach(member => {
+        const opt = document.createElement('option');
+        opt.value = member;
+        opt.text = member;
+        memberSelect.appendChild(opt);
+      });
+      const newOpt = document.createElement('option');
+      newOpt.value = '__new__';
+      newOpt.text = '+ Add New Member';
+      memberSelect.appendChild(newOpt);
+    }
+  }
+
+  // ====== Member change ======
+  async function onMemberChange() {
+    const memberSelect = document.getElementById('member');
+    const member = memberSelect.value;
+    hideMessage();
+    if (member === '__new__') {
+      toggleNewMember(true);
+      return;
+    }
+    toggleNewMember(false);
+    if (!member) {
+      document.getElementById('phone').value = '';
+      document.getElementById('genderDisplay').value = '';
+      document.getElementById('genderSelect').value = '';
+      document.getElementById('nationalId').value = '';
+      return;
+    }
+    const details = await callAPI('getDetails', { member });
+    if (details) {
+      document.getElementById('phone').value = details.phone || '';
+      document.getElementById('genderDisplay').value = details.gender || '';
+      document.getElementById('genderSelect').value = details.gender || '';
+      document.getElementById('nationalId').value = details.nationalId || '';
+    }
+  }
+
+  // ====== Submit form ======
+  async function submitForm() {
+    const team = document.getElementById('team').value;
+    const memberSelect = document.getElementById('member');
+    let member = memberSelect.value;
+    let phone = document.getElementById('phone').value.trim();
+    let gender = document.getElementById('genderSelect').value;
+    let nationalId = document.getElementById('nationalId').value.trim();
+
+    if (member === '__new__') {
+      if (!validateNewMemberFields()) return;
+      const newName = document.getElementById('newMemberName').value.trim();
+      member = newName;
+    } else {
+      phone = document.getElementById('phone').value.trim();
+      gender = document.getElementById('genderDisplay').value.trim();
+      nationalId = document.getElementById('nationalId').value.trim();
+      if (!member) {
+        showMessage('Please select a member or choose "+ Add New Member".', false);
+        return;
+      }
+    }
+    if (!team) {
+      showMessage('Please select a team.', false);
+      return;
+    }
+
+    const result = await callAPI('save', { team, member, phone, gender, nationalId });
+    if (result) {
+      showMessage('✅ Attendance recorded!', true);
+      // Reset form
+      document.getElementById('team').value = '';
+      document.getElementById('member').innerHTML = '<option value="">-- Select Member --</option>';
+      document.getElementById('phone').value = '';
+      document.getElementById('genderDisplay').value = '';
+      document.getElementById('genderSelect').value = '';
+      document.getElementById('nationalId').value = '';
+      toggleNewMember(false);
+      document.getElementById('newMemberName').value = '';
+    }
+  }
+
+  // ====== Init ======
+  window.onload = loadTeams;
 </script>
 </body>
 </html>
