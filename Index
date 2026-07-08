@@ -188,7 +188,7 @@
 
 <script>
   // ====== Configuration ======
-  const API_URL = 'https://script.google.com/macros/s/AKfycbw95R3TbxLRqz-DX4oXzylzO4vorh1VctNT-jikyZFM2lKb5pDbZW3w8P8cqRu7P3kWQ/exec';
+  const API_URL = 'https://script.google.com/macros/s/AKfycbw95R3TbxLRqz-DX4oXzylzO4vorh1VctNT-jikyZFM2lKb5pDbZW3bw8P8cqRu7P3kWQ/exec';
 
   // ====== UI helpers (same as before) ======
   function showLoading() {
